@@ -76,12 +76,13 @@
 % Paper metadata (use plain text, for PDF inclusion and later
 % re-using, if desired).  Use \emtpyauthor when submitting for review
 % so you remain anonymous.
-\def\plaintitle{A Vision-Based Road-Crossing Assistant \\for Visually Impaired Pedestrians}
+\def\plaintitle{A Vision-based Road Crossing Assistant System Empowered by Deep Learning}
 \def\plainauthor{First Author, Second Author, Third Author,
   Fourth Author, Fifth Author, Sixth Author}
 \def\emptyauthor{}
 \def\plainkeywords{Computer Vision; Detection; Tracking}
 \def\plaingeneralterms{Documentation, Standardization}
+\newcommand{\para}[1]{\smallskip\noindent\textbf{#1}}
 
 % llt: Define a global style for URLs, rather that the default one
 \makeatletter
@@ -151,34 +152,25 @@
 
 \maketitle
 
+
 \begin{abstract}
-At the crossroads of traffic, how to guide blind people to cross the road has always been a very difficult problem. We proposed an auxiliary system that combines zebra crossing detection, traffic light detection tracking, and deep obstacle avoidance solutions to help blind people deal with complicated scenes when crossing the road.  Our application uses state-of-the-art deep learning algorithms, which have been proven to be successful in a variety of usage scenarios.
+To ensure the safety of people with disabilities in public traffic environment has always been a formidable problem that plagues the community and the society. At the road intersections of traffic, how to guide visually impaired pedestrians to cross the roads independently has been a tough task. There is still an evident lack of relevant research works on this task. Nowadays, deep learning algorithms have achieved equivalent or even beyond human-level capability, especially in computer vision-based task. The fast-developing deep learning algorithms give us a chance to solve the task. In this paper, we proposed a vision-based auxiliary system that combines detection and tracking of zebra-crossing,  traffic lights and obstacles to help visually impaired pedestrians deal with complex urban road scenes when crossing the road intersections. Our application uses state-of-the-art deep learning algorithms together with efficient computer vision algorithms, which have been proven to be successful in a variety of usage scenarios.
 \end{abstract}
 
 \category{H.5.2.}{Information Interfaces and Presentation
 	(e.g. HCI)}{User Interfaces} \category{}{}{}
 
 \keywords{\plainkeywords}
+\include{data/intro}
+\include{data/related}
+\include{data/method}
+\include{data/evaluation}
+\include{data/conclusion}
 
-\section{Introduction}
-\section{Related Work}
-\section{Robust pedestrian light detection and tracking}
-\subsection{Detection}
-\subsubsection{One-stage end-to-end detection method}
-\subsubsection{HSV-based light color classifier}
-\subsection{Determination}
-\subsubsection{Zebra crossing detection for determining pedestrian light
-}
-\subsection{Tracking}
-\subsubsection{KCF tracker}
-\subsubsection{Detect to Track and Track to Detect}
-\section{Obstacle detection and tracking}
-\subsection{Depth-based global coordinate estimation}
-\subsection{Obstacle motion analysis}
 
-\section{Experiment}
-\section{Evaluation}
-\section{Conclusion}
+%\section{Related Work}
+
+
 
 
 
