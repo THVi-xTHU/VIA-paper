@@ -13,12 +13,47 @@ Inevitably, an image captured by an RGB camera may conclude multiple traffic lig
 \subsection{Robust pedestrian light detection and tracking}
 \para{Detection.} Modern object detectors are easily adapted to road scene by training with automated datasets such as  YOLOv3~\cite{redmon-farhadi:2018}
 
+
+
+\para{HSV-based light color classifier.}
+%1.红绿灯检测到后，另一个重要问题是对于灯的颜色分类
+%2.HSV相比于RGB的优势
+%3.我们的实现方式
+Once the traffic lights are detected, another important task is to classify the color of detected traffic lights. Wang et al. \cite{wang2014rgb} use RGB coloring space to perform the color segmentation.
+
+
+Although RGB is a direct representation of color, the R, G, and B values are not directly related to the three attributes of color and cannot reveal the relationship between colors.
+Therefore, we use a HSV-based method to build our light color classifier for determining the active state of traffic lights. HSV stands for "Hue, Saturation, Value", which is used to measure the hue angle of a color, saturation and brightness. In HSV color space, by counting the pixels inside a given slice of color and then filtering for a dynamically set saturation threshold, we can detect whether the target region is predominantly red, yellow or green.
+% TODO 2013 RGB-D image-based detection of stairs, pedestrian crosswalks and traffic signs
+
+
+First, the average saturation in the target region is determined. Second, we get the upper bound and lower bound of the color slice for each color, according to the saturation threshold. Once the bounds are settled, the next step is to create a mask by finding all pixels in the target HSV image that are within the bounds. Then, we go back to the RGB color space and perform bitwise\_and() on the mask and the RGB image. Now, we can have a nicely quantified representation of the color of the traffic light by comparing the total number of non-zero pixels in the image.
+
+
 \para{Tracking.} The traffic lights across the road that are observed from the side of the road are often very small, so even the most recent detectors will have some degree of missed detection. We track traffic lights to make up for these missed checks. We track it with KCF~\cite{kcf} because it can reach 200fps on the CPU and it will not affect real-time performance in our system. The KCF uses the traffic light image of the previous frame as a template, and uses the correlation filter in the search area at the same position in the current frame to find the maximum position relative to the template frame.
 
 
 \para{Zebra-crossing detection.}
 
 \para{Pedestrian light voting.}
+
+
+
+\para{Zebra crossing detection for determining pedestrian light.}
+%0.Related Works
+%1.为什么需要斑马线识别？因为在复杂道路场景下，同时有vehicle lights和pedestrian lights，可以通过斑马线的位置来辅助定位红绿灯
+%2.怎样实现斑马线检测的？
+Traffic lights are the most important signalling devices positioned at road intersections, guiding the motion of both the vehicles and the pedestrians. When visually imparied pedestrians cross the road, the detection of the existence and the status of all the traffic lights are necessary. Especially, pedestrian lights play a vital role in the entire incident, which dominate the major decisions of our vision-based road-crossing assitant. Therefore, we need to determine the pedestrian light among all the detected traffic lights.
+
+
+In complex urban road scenes, with both vehicle lights and pedestrian lights, the dectection of the zebra crossing can help determine the target pedestrian light among all the candidate lights. Since the pedestrian lights are positioned at the end of zebra crossing, we first need to detect a trapezoidal ROI of zebra crossing. Then the edges and the vanishing point of the zebra crossing are extracted for determining the pedestrian light. 
+
+
+In our proposed vision-based assistant, zebra crossing detection is implementated as follows. First, the white color is extracted as a mask according to a set threshold. Second, the mask is eroded to get the contours of white strips. Some contours are filtered out by the shape information. Third, we calculate the median average for both left line and right line of zebra crossing. A RANSAC algorithm is performed to select the bounding points of a contour enclosed within the median circle. Finally, the bounding lines and the vanishing point of zebra crossing are derived, which gives the ROI of detection.
+
+
+
+
 %\subsection{Detection}
 %\subsubsection{One-stage end-to-end detection method}
 %\subsubsection{HSV-based light color classifier}
