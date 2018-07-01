@@ -74,6 +74,10 @@
 \usepackage{todonotes}
 \usepackage{algorithm}
 \usepackage{algpseudocode}
+\usepackage{floating}
+
+\let\oldReturn\Return
+\renewcommand{\Return}{\State\oldReturn}
 % Paper metadata (use plain text, for PDF inclusion and later
 % re-using, if desired).  Use \emtpyauthor when submitting for review
 % so you remain anonymous.

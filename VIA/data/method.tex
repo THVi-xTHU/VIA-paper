@@ -41,11 +41,13 @@ We maintain a tracker set $\mathcal{T}$ to save all trackers in history, and not
  
 In each frame, there might be multiple detection and tracking boxes that belong to a single traffic light. Keeping these duplicates would harm the tracking  thus  before matching, we use non-maximum-suppression (NMS) on both detection boxes and tracker predicted boxes to reduce the deleterious duplicates. We prefer to remove the detection duplicates with lower detection scores, while in the filtering of the repeated tracking box, we comprehensively consider the IOU w.r.t the corresponding detection box, their detection scores and tracking scores.
 
-\para{Active tracker selection.} The detector can somehow generate false detections. To avoid a temporal 
+\para{Active tracker selection.} The detector sometimes produces false alarms. We use the following strategies to reduce the false alarm rate: 1) only when a new detection is continuously detected 3 times, it is considered as \emph{qualified}, and is added into the active set $\mathcal{T}_a$; 2) each time when a tracked target is detected, it's life confidence increase, and vice versa; 3) if the life confidence of a tracker is below some threshold, it is considered as \emph{outdated}. We remove these trackers from $\mathcal{T}_a$. 
+
+Finally, the output traffic light for a frame is the summation of detection and tracking results. The procedure of the algorithm is referred at Algorithm~\ref{alg:traffic_light}.   
 
 \begin{algorithm}[H]
 \caption{Robust Traffic Light Detection and Tracking} 
-\label{alg1}
+\label{alg:traffic_light}
 \begin{algorithmic}[1]
 \State $I^n$: Input image at frame $n$
 \State $\theta$: IOU threshold of matching
@@ -75,14 +77,15 @@ In each frame, there might be multiple detection and tracking boxes that belong 
 \State $ P \Leftarrow Hungarian(M, \theta)$
 \For{each pair $(d_{tl}^i, t_{tl}^j)$ in P}
 \State tracker $T^j.update(d_{tl}^i)$
+\State $O.insert(d_{tl}^i)$
 \EndFor
 
 \For{each detection $d_{tl}^i$ not in Row(P)}
 \State tracker $ T_{new} \Leftarrow \mathcal{T}.insert(d_{tl}^i)$
-\State $T_{new}.update()$
+\State $T_{new}.update()$; $O.insert(d_{tl}^i)$
 \EndFor
 \For{each tracker predicted box $t_{tl}^j$ not in Col(P)}
-\State $T^j.punish()$
+\State $T^j.punish()$; $O.insert(t_{tl}^j)$
 \EndFor
 \For{each tracker $T_i$ in $\mathcal{T}$}
 \If{$T_i$.qualified()}
@@ -92,6 +95,7 @@ In each frame, there might be multiple detection and tracking boxes that belong 
 \State $\mathcal{T}_a.remove(T_i)$
 \EndIf
 \EndFor
+\Return $\mathcal{O}$
 \EndProcedure
 \end{algorithmic}
 \end{algorithm}
