@@ -37,35 +37,62 @@ First, the average saturation in the target region is determined. Second, we get
   
  
 
-We maintain a tracker set $\mathcal{T}$ to save all trackers in history, and notate the set of current active trackers as $\mathcal{T}_a \in \mathcal{T}$. We denote the traffic light detection box on frame $n$ as $d^{n_i}, i=1,\cdots, k$, and the active tracker predicted bounding boxes on frame $n$ as $t^{n_j}, j=1,\cdots, |\mathcal{T}_a|$. Afterwards, the tracker predicted boxes $t^{n_j}$ are matched to detection boxes $d^{n_i}$ using Hungarian algorithm~\cite{kuhn-munkres:1955} according to the intersection-over-union(IOU) between bounding boxes. If the IOU is larger than a minimum value $\theta$, the two boxes are merged into one, and the current location of the tracker is rectified by the respective detection box. Otherwise, the detection box is regarded as a new target to be added into tracker set $\mathcal{T}$, and the tracker predicted box indicates there is a miss detection of the target in this frame, which should be punished in case the target light has exited the view.
+We maintain a tracker set $\mathcal{T}$ to save all trackers in history, and notate the set of current active trackers as $\mathcal{T}_a \in \mathcal{T}$. We denote the traffic light detection box on frame $n$ as $d_{tl}^{n_i}, i=1,\cdots, k$, and the active tracker predicted bounding boxes on frame $n$ as $t_{tl}^{n_j}, j=1,\cdots, |\mathcal{T}_a|$. Afterwards, the tracker predicted boxes $t_{tl}^{n_j}$ are matched to detection boxes $d_{tl}^{n_i}$ using Hungarian algorithm~\cite{kuhn-munkres:1955} according to the intersection-over-union(IOU) between bounding boxes. If the IOU is larger than a minimum value $\theta$, the two boxes are merged into one, and the current location of the tracker is rectified by the respective detection box. Otherwise, the detection box is regarded as a new target to be added into tracker set $\mathcal{T}$, and the tracker predicted box indicates there is a miss detection of the target in this frame, which should be punished in case the target light has exited the view.
  
 In each frame, there might be multiple detection and tracking boxes that belong to a single traffic light. Keeping these duplicates would harm the tracking  thus  before matching, we use non-maximum-suppression (NMS) on both detection boxes and tracker predicted boxes to reduce the deleterious duplicates. We prefer to remove the detection duplicates with lower detection scores, while in the filtering of the repeated tracking box, we comprehensively consider the IOU w.r.t the corresponding detection box, their detection scores and tracking scores.
 
 \para{Active tracker selection.} The detector can somehow generate false detections. To avoid a temporal 
 
-\begin{algorithm}
+\begin{algorithm}[H]
 \caption{Robust Traffic Light Detection and Tracking} 
 \label{alg1}
-\begin{algorithmic}
-\STATE {Input: Image at frame $n$}
-\STATE $\mathcal{T} = \emptyset$ 
-\STATE $y \Leftarrow 1$ 
-\IF{$n < 0$} 
-\STATE $X \Leftarrow 1 / x$ 
-\STATE $N \Leftarrow -n$ 
-\ELSE 
-\STATE $X \Leftarrow x$ 
-\STATE $N \Leftarrow n$
-\ENDIF 
-\WHILE{$N \neq 0$} 
-\IF{$N$ is even} 
-\STATE $X \Leftarrow X \times X$ 
-\STATE $N \Leftarrow N / 2$ 
-\ELSE[$N$ is odd] 
-\STATE $y \Leftarrow y \times X$ 
-\STATE $N \Leftarrow N - 1$ 
-\ENDIF 
-\ENDWHILE
+\begin{algorithmic}[1]
+\State $I^n$: Input image at frame $n$
+\State $\theta$: IOU threshold of matching
+\State $\mathcal{T} = \emptyset, \mathcal{T}_a = \emptyset$ 
+\Procedure{RobustTrafficLightDetection}{$I^n, \theta$}
+\State $O \Leftarrow \emptyset$
+\State $d^{n}, s^{n} \Leftarrow Detector(I^n)$
+\State $d_{tl}^{n}, s_{tl}^{n} \Leftarrow$ pick the detection of traffic light from $d^{n}$
+%\IF{$n < 0$} 
+%\STATE $X \Leftarrow 1 / x$ 
+%\STATE $N \Leftarrow -n$ 
+%\ELSE 
+%\STATE $X \Leftarrow x$ 
+%\STATE $N \Leftarrow n$
+%\ENDIF 
+\For{each tracker $T_i$ in $\mathcal{T}_a$} 
+\State $t_{tl}^{n_i}, {s'}_{tl}^{n_i} \Leftarrow  t_{tl}^{(n-1)_i}.predict()$
+\EndFor 
+\State $d_{tl}^{n_{i'}} \Leftarrow NMS(d_{tl}^{n_i}, s_{tl}^{n_i})$
+\State ${s'}_{tl}^{n_{j}} = Merge(IOU_{ij}, s_{tl}^n, {s'}_{tl}^n)$, $t_{tl}^{n_{j'}} \Leftarrow NMS(t_{tl}^{n_j}, {s'}_{tl}^{n_j})$
+\State $\mathcal{M} \Leftarrow []_{|n_{i'}| \times |n_{j'}|}$
+\For{each detection $d_{tl}^i$ in $d_{tl}^{n_{i'}}$}
+\For{each tracker predicted box $t_{tl}^j$ in $t_{tl}^{n_{j'}}$}
+\State $M[i, j] = IOU(d_{tl}^i, t_{tl}^j$)
+\EndFor
+\EndFor
+\State $ P \Leftarrow Hungarian(M, \theta)$
+\For{each pair $(d_{tl}^i, t_{tl}^j)$ in P}
+\State tracker $T^j.update(d_{tl}^i)$
+\EndFor
+
+\For{each detection $d_{tl}^i$ not in Row(P)}
+\State tracker $ T_{new} \Leftarrow \mathcal{T}.insert(d_{tl}^i)$
+\State $T_{new}.update()$
+\EndFor
+\For{each tracker predicted box $t_{tl}^j$ not in Col(P)}
+\State $T^j.punish()$
+\EndFor
+\For{each tracker $T_i$ in $\mathcal{T}$}
+\If{$T_i$.qualified()}
+\State $\mathcal{T}_a.insert(T_i)$ 
+\EndIf
+\If{$T_i$.outdated()}
+\State $\mathcal{T}_a.remove(T_i)$
+\EndIf
+\EndFor
+\EndProcedure
 \end{algorithmic}
 \end{algorithm}
 
@@ -77,13 +104,13 @@ In each frame, there might be multiple detection and tracking boxes that belong 
 %0.Related Works
 %1.为什么需要斑马线识别？因为在复杂道路场景下，同时有vehicle lights和pedestrian lights，可以通过斑马线的位置来辅助定位红绿灯
 %2.怎样实现斑马线检测的？
-Traffic lights are the most important signalling devices positioned at road intersections, guiding the motion of both the vehicles and the pedestrians. When visually imparied pedestrians cross the road, the detection of the existence and the status of all the traffic lights are necessary. Especially, pedestrian lights play a vital role in the entire incident, which dominate the major decisions of our vision-based road-crossing assitant. Therefore, we need to determine the pedestrian light among all the detected traffic lights.
+Traffic lights are the most important signalling devices positioned at road intersections, guiding the motion of both the vehicles and the pedestrians. When visually imparied pedestrians cross the road, the detection of the existence and the status of all the traffic lights are necessary. Especially, pedestrian lights play a vital role in the entire incident, which dominate the major decisions of our vision-based road-crossing assistant. Therefore, we need to determine the pedestrian light among all the detected traffic lights.
 
 
-In complex urban road scenes, with both vehicle lights and pedestrian lights, the dectection of the zebra crossing can help determine the target pedestrian light among all the candidate lights. Since the pedestrian lights are positioned at the end of zebra crossing, we first need to detect a trapezoidal ROI of zebra crossing. Then the edges and the vanishing point of the zebra crossing are extracted for determining the pedestrian light. 
+In complex urban road scenes, with both vehicle lights and pedestrian lights, the detection of the zebra crossing can help determine the target pedestrian light among all the candidate lights. Since the pedestrian lights are positioned at the end of zebra crossing, we first need to detect a trapezoidal ROI of zebra crossing. Then the edges and the vanishing point of the zebra crossing are extracted for determining the pedestrian light. 
 
 
-In our proposed vision-based assistant, zebra crossing detection is implementated as follows. First, the white color is extracted as a mask according to a set threshold. Second, the mask is eroded to get the contours of white strips. Some contours are filtered out by the shape information. Third, we calculate the median average for both left line and right line of zebra crossing. A RANSAC algorithm is performed to select the bounding points of a contour enclosed within the median circle. Finally, the bounding lines and the vanishing point of zebra crossing are derived, which gives the ROI of detection.
+In our proposed vision-based assistant, zebra crossing detection is implemented as follows. First, the white color is extracted as a mask according to a set threshold. Second, the mask is eroded to get the contours of white strips. Some contours are filtered out by the shape information. Third, we calculate the median average for both left line and right line of zebra crossing. A RANSAC algorithm is performed to select the bounding points of a contour enclosed within the median circle. Finally, the bounding lines and the vanishing point of zebra crossing are derived, which gives the ROI of detection.
 
 
 
