@@ -19,21 +19,55 @@ Inevitably, an image captured by an RGB camera may conclude multiple traffic lig
 %1.红绿灯检测到后，另一个重要问题是对于灯的颜色分类
 %2.HSV相比于RGB的优势
 %3.我们的实现方式
-Once the traffic lights are detected, another important task is to classify the color of detected traffic lights. Wang et al. \cite{wang2014rgb} use RGB coloring space to perform the color segmentation.
+Once the traffic lights are detected, another important task is to classify the color of detected traffic lights. Wang et al. \cite{wang-et-al:2014} use RGB coloring space to perform the color segmentation.
 
 
 Although RGB is a direct representation of color, the R, G, and B values are not directly related to the three attributes of color and cannot reveal the relationship between colors.
-Therefore, we use a HSV-based method to build our light color classifier for determining the active state of traffic lights. HSV stands for "Hue, Saturation, Value", which is used to measure the hue angle of a color, saturation and brightness. In HSV color space, by counting the pixels inside a given slice of color and then filtering for a dynamically set saturation threshold, we can detect whether the target region is predominantly red, yellow or green.
+Therefore, we use a HSV-based method to build our light color classifier for determining the active state of traffic lights. HSV stands for "Hue, Saturation, Value", which is used to measure the hue angle of a color, saturation and brightness. In HSV color space, by counting the pixels inside a given slice of color and then filtering for a dynamically set saturation threshold, we can detect whether the target region is predominantly red, green or neither.
 % TODO 2013 RGB-D image-based detection of stairs, pedestrian crosswalks and traffic signs
 
 
-First, the average saturation in the target region is determined. Second, we get the upper bound and lower bound of the color slice for each color, according to the saturation threshold. Once the bounds are settled, the next step is to create a mask by finding all pixels in the target HSV image that are within the bounds. Then, we go back to the RGB color space and perform bitwise\_and() on the mask and the RGB image. Now, we can have a nicely quantified representation of the color of the traffic light by comparing the total number of non-zero pixels in the image.
+First, the average saturation in the target region is determined. Second, we get the upper bound and lower bound of the H-channel range for each color, according to the saturation threshold. Third, we set the lower bound of brightness, since it is a major feature distinguishing background noise, such as tree and leaves, with the actual green "light". Once the bounds are settled, the next step is to create a mask by finding all pixels in the target HSV image that are within the bounds. Each color state has its corresponding bitwise masks. Now, we can have a nicely quantified representation of the color of the traffic light by comparing the total number of non-zero pixels in the mask. The color state with largest number of non-zero pixels is selected as the light state.
 
 
-\para{Tracking.} The traffic lights across the road that are observed from the side of the road are often very small, so even the most recent detectors will have some degree of missed detection. We track traffic lights to make up for these missed checks. We track it with KCF~\cite{kcf} because it can reach 200fps on the CPU and it will not affect real-time performance in our system. The KCF uses the traffic light image of the previous frame as a template, and uses the correlation filter in the search area at the same position in the current frame to find the maximum position relative to the template frame.
+\para{Tracking.} At a spacious crossroad, the traffic lights observed are usually small. Even the most recent detectors can have a certain number of miss detections. Performing tracking on the detected targets can partly alleviate the problem. However, since most visual tracking algorithms~\cite{henriques-et-al:2015,nam-han:2016,bertinetto-et-al:2016,held-et-al:2016} find the targets according to the templates generated from previous frames, it is prone to deviation in history. If not proper dealt with, the tracker will finally lose the target. In fact, general visual trackers don't know what are the objects they are tracking on, so this drives us to use the detection algorithm to compensate for the tracking drift. The framework integrating the advantages of detection and tracking is named \emph{track-to-detect} and \emph{detect-to-track}.
 
 
-\para{Zebra-crossing detection.}
+    The tracking of traffic lights in a short term are relative simple, because 1) the the shape of the lights are rigid; 2) the distribution of lights in view is sparse; 3) the height makes them seldom suffer from occlusion. Consequently, we adopt KCF~\cite{henriques-et-al:2015} as the tracker. KCF is good enough to meet the demands, and it runs at over 200 fps on CPUs so it will not encumber the real-time speed in our system. Once a traffic light is detected, a KCF tracker is assigned to it. The tracker uses the traffic light patch of the previous frame as a template, and find the maximum correlation pixel location in the search area of the current frame relative to the template. 
+  
+ 
+
+We maintain a tracker set $\mathcal{T}$ to save all trackers in history, and notate the set of current active trackers as $\mathcal{T}_a \in \mathcal{T}$. We denote the traffic light detection box on frame $n$ as $d^{n_i}, i=1,\cdots, k$, and the active tracker predicted bounding boxes on frame $n$ as $t^{n_j}, j=1,\cdots, |\mathcal{T}_a|$. Afterwards, the tracker predicted boxes $t^{n_j}$ are matched to detection boxes $d^{n_i}$ using Hungarian algorithm~\cite{kuhn-munkres:1955} according to the intersection-over-union(IOU) between bounding boxes. If the IOU is larger than a minimum value $\theta$, the two boxes are merged into one, and the current location of the tracker is rectified by the respective detection box. Otherwise, the detection box is regarded as a new target to be added into tracker set $\mathcal{T}$, and the tracker predicted box indicates there is a miss detection of the target in this frame, which should be punished in case the target light has exited the view.
+ 
+In each frame, there might be multiple detection and tracking boxes that belong to a single traffic light. Keeping these duplicates would harm the tracking  thus  before matching, we use non-maximum-suppression (NMS) on both detection boxes and tracker predicted boxes to reduce the deleterious duplicates. We prefer to remove the detection duplicates with lower detection scores, while in the filtering of the repeated tracking box, we comprehensively consider the IOU w.r.t the corresponding detection box, their detection scores and tracking scores.
+
+\para{Active tracker selection.} The detector can somehow generate false detections. To avoid a temporal 
+
+\begin{algorithm}
+\caption{Robust Traffic Light Detection and Tracking} 
+\label{alg1}
+\begin{algorithmic}
+\STATE {Input: Image at frame $n$}
+\STATE $\mathcal{T} = \emptyset$ 
+\STATE $y \Leftarrow 1$ 
+\IF{$n < 0$} 
+\STATE $X \Leftarrow 1 / x$ 
+\STATE $N \Leftarrow -n$ 
+\ELSE 
+\STATE $X \Leftarrow x$ 
+\STATE $N \Leftarrow n$
+\ENDIF 
+\WHILE{$N \neq 0$} 
+\IF{$N$ is even} 
+\STATE $X \Leftarrow X \times X$ 
+\STATE $N \Leftarrow N / 2$ 
+\ELSE[$N$ is odd] 
+\STATE $y \Leftarrow y \times X$ 
+\STATE $N \Leftarrow N - 1$ 
+\ENDIF 
+\ENDWHILE
+\end{algorithmic}
+\end{algorithm}
 
 \para{Pedestrian light voting.}
 
