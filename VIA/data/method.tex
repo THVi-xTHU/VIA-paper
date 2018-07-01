@@ -10,7 +10,7 @@ Inevitably, an image captured by an RGB camera may conclude multiple traffic lig
 
 \para{Obstacle avoidance.} Even if green lights turns on, it doesn't mean that the blind can cross the road right away. There are always pedestrians from same or opposite sides walking back and forth; and it is possible that some vehicles are also making the left/right turn simultaneously, since that in certain countries, the left or right turn for the motor vehicles are not ruled by the traffic light; More commonly, non-motorized vehicles are also running on the non-motorized lanes on both sides. If not getting notified of how to avoid these obstacles in time, blind people will be in risk to walk through. Our solution is to first use the detection algorithm to obtain the position of obstacles in view, and secondly to obtain the distance between each obstacle and the blind by monocular or binocular depth estimation algorithms. Moreover, if we can predict the motion of the obstacle in future, we will be able to better decide whether to stop or keep forwarding, so we also track the route of the obstructive objects in view.
 
-\subsection{Robust pedestrian light detection and tracking}
+\subsection{Robust traffic light detection and tracking}
 \para{Detection.} Modern object detectors are easily adapted to road scene by training with automated datasets such as  YOLOv3~\cite{redmon-farhadi:2018}
 
 
@@ -45,7 +45,7 @@ In each frame, there might be multiple detection and tracking boxes that belong 
 
 Finally, the output traffic light for a frame is the summation of detection and tracking results. The procedure of the algorithm is referred at Algorithm~\ref{alg:traffic_light}.   
 
-\begin{algorithm}[H]
+\begin{algorithm}[h]
 \caption{Robust Traffic Light Detection and Tracking} 
 \label{alg:traffic_light}
 \begin{algorithmic}[1]
@@ -95,29 +95,39 @@ Finally, the output traffic light for a frame is the summation of detection and 
 \State $\mathcal{T}_a.remove(T_i)$
 \EndIf
 \EndFor
-\Return $\mathcal{O}$
+\Return $O$
 \EndProcedure
 \end{algorithmic}
 \end{algorithm}
 
-\para{Pedestrian light voting.}
-
-
-
-\para{Zebra crossing detection for determining pedestrian light.}
+\subsection{Pedestrian light determination}
 %0.Related Works
 %1.为什么需要斑马线识别？因为在复杂道路场景下，同时有vehicle lights和pedestrian lights，可以通过斑马线的位置来辅助定位红绿灯
 %2.怎样实现斑马线检测的？
+%\para{Zebra crossing detection for determining pedestrian light.}
+
 Traffic lights are the most important signalling devices positioned at road intersections, guiding the motion of both the vehicles and the pedestrians. When visually imparied pedestrians cross the road, the detection of the existence and the status of all the traffic lights are necessary. Especially, pedestrian lights play a vital role in the entire incident, which dominate the major decisions of our vision-based road-crossing assistant. Therefore, we need to determine the pedestrian light among all the detected traffic lights.
 
 
-In complex urban road scenes, with both vehicle lights and pedestrian lights, the detection of the zebra crossing can help determine the target pedestrian light among all the candidate lights. Since the pedestrian lights are positioned at the end of zebra crossing, we first need to detect a trapezoidal ROI of zebra crossing. Then the edges and the vanishing point of the zebra crossing are extracted for determining the pedestrian light. 
+
+\para{Zebra crossing detection} In complex urban road scenes, with both vehicle lights and pedestrian lights, the detection of the zebra crossing can help determine the target pedestrian light among all the candidate lights. Since the pedestrian lights are positioned at the end of zebra crossing, we first need to detect a trapezoidal ROI of zebra crossing. Then the edges and the vanishing point of the zebra crossing are extracted for determining the pedestrian light. 
 
 
 In our proposed vision-based assistant, zebra crossing detection is implemented as follows. First, the white color is extracted as a mask according to a set threshold. Second, the mask is eroded to get the contours of white strips. Some contours are filtered out by the shape information. Third, we calculate the median average for both left line and right line of zebra crossing. A RANSAC algorithm is performed to select the bounding points of a contour enclosed within the median circle. Finally, the bounding lines and the vanishing point of zebra crossing are derived, which gives the ROI of detection.
 
+\para{Pedestrian light voting.} The vanishing point of the zebra crossing is closely related to the position of the pedestrian light. Assuming that the zebra crossing is successfully detected and a reasonable vanishing point is formed, we find: 
+\begin{itemize}
+\item if there are traffic lights existing in the triangular area formed by the vanishing point and the last zebra line, these lights must include the expected pedestrian light, as shown in Figure~\ref{fig:zebra1}; 
+\item if there is no traffic light in the triangle area, the pedestrian light is generally closer to the vanishing point than other traffic lights, as shown in Figure~\ref{fig:zebra2}.
+\end{itemize}
+
+Based on the two phenomena we observed, we have made the following algorithm. Firstly we set the upper left corner of the image to the origin of the coordinate system, with the $y$ axis pointing down and the $x$ axis pointing right. We also denote the width and height of the image as $w, h$. Secondly, we check whether there is a stable zebra detection. If no stable zebra is detected, we give no voting with respect to the detected traffic lights. This conservative strategy requires more frames to determine pedestrian lights, but it will minimize the occurrence of errors. For example, when people and cars cross the sidewalk, they will block some of the zebra crossings. This part of the occlusion is likely to cause the system to erroneously estimate the vanishing point of the full shift, making the wrong mistake of the car lights as a pedestrian light causing irreparable damage.: when people and vehicles are crossing the crosswalks, the zebra detection results are not reliable, which should be dropped from 
+
+we compute the position of the vanishing point.
 
 
+
+   position of the vanishing point should be the one closest the  When the vanishing point locates under the 
 
 %\subsection{Detection}
 %\subsubsection{One-stage end-to-end detection method}
