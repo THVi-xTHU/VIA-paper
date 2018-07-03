@@ -121,13 +121,12 @@ In our proposed vision-based assistant, zebra crossing detection is implemented 
 \item if there is no traffic light in the triangle area, the pedestrian light is generally closer to the vanishing point than other traffic lights, as shown in Figure~\ref{fig:zebra2}.
 \end{itemize}
 
-Based on the two phenomena we observed, we have made the following algorithm. Firstly we set the upper left corner of the image to the origin of the coordinate system, with the $y$ axis pointing down and the $x$ axis pointing right. We also denote the width and height of the image as $w, h$. Secondly, we check whether there is a stable zebra detection. If no stable zebra is detected, we give no voting with respect to the detected traffic lights. This conservative strategy requires more frames to determine pedestrian lights, but it will minimize the occurrence of errors. For example, when people and cars cross the sidewalk, they will block some of the zebra crossings. This part of the occlusion is likely to cause the system to erroneously estimate the vanishing point of the full shift, making the wrong mistake of the car lights as a pedestrian light causing irreparable damage.: when people and vehicles are crossing the crosswalks, the zebra detection results are not reliable, which should be dropped from 
+Based on the two phenomena we observed, we have made the following algorithm. Firstly we set the upper left corner of the image to the origin of the coordinate system, with the $y$ axis pointing down and the $x$ axis pointing right. We also denote the width and height of the image as $w, h$. Secondly, we check whether there is a stable zebra detection. If no stable zebra is detected, we give no voting with respect to the detected traffic lights. This conservative strategy requires more frames to determine pedestrian lights, but it will minimize the occurrence of errors. For example, when people and cars cross the sidewalk, they tend to occlude the zebra crossings partially. The occlusion is likely to cause the system to erroneously estimate the vanishing point and determinate a fake pedestrian light, as shown in Figure~\ref{fig:zebra3}. Thus, we drop the unstable frames and stay waiting for a reliable result. Thirdly, when a traffic light get 90\% of  $\eta(\eta\ge 30)$ votes and it has larger votes than all other competitors, we believe it is a pedestrian light. If the status of the light is green, the blind start to cross the road.
 
-we compute the position of the vanishing point.
+It's possible that the old pedestrian light can disappear from the view, and after a duration it is removed from active traffic light set, as depicted in Algorithm~\ref{alg:traffic_light}. Our system can adapt to the dynamic switching between pedestrian lights. Once the existing pedestrian light is exceeded by other higher traffic lights or no longer valid, a new pedestrian light is elected to replace the old pedestrian light.
 
 
 
-   position of the vanishing point should be the one closest the  When the vanishing point locates under the 
 
 %\subsection{Detection}
 %\subsubsection{One-stage end-to-end detection method}
