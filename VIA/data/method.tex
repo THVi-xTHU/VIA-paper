@@ -45,7 +45,7 @@ In each frame, there might be multiple detection and tracking boxes that belong 
 
 Finally, the output traffic light for a frame is the summation of detection and tracking results. The procedure of the algorithm is referred at Algorithm~\ref{alg:traffic_light}.   
 
-\begin{algorithm}[h]
+\begin{algorithm}[ht!]
 \caption{Robust Traffic Light Detection and Tracking} 
 \label{alg:traffic_light}
 \begin{algorithmic}[1]
@@ -115,16 +115,76 @@ Traffic lights are the most important signalling devices positioned at road inte
 
 In our proposed vision-based assistant, zebra crossing detection is implemented as follows. First, the white color is extracted as a mask according to a set threshold. Second, the mask is eroded to get the contours of white strips. Some contours are filtered out by the shape information. Third, we calculate the median average for both left line and right line of zebra crossing. A RANSAC algorithm is performed to select the bounding points of a contour enclosed within the median circle. Finally, the bounding lines and the vanishing point of zebra crossing are derived, which gives the ROI of detection.
 
+\begin{figure}[ht!]
+\begin{center}
+\begin{subfigure}[h]{0.48\linewidth}
+ \includegraphics[width=1.\linewidth]{figure/zebra1.jpg}
+ \caption{}
+ \label{fig:zebra1}
+ \end{subfigure}
+ \begin{subfigure}[h]{0.48\linewidth}
+  \includegraphics[width=1.\linewidth]{figure/zebra2.jpg}
+  \caption{}
+  \label{fig:zebra2}
+  \end{subfigure}
+   \begin{subfigure}[h]{0.48\linewidth}
+  \includegraphics[width=1.\linewidth]{figure/zebra3.jpg}
+  \caption{}
+  \label{fig:zebra3}
+  \end{subfigure}
+  \begin{subfigure}[h]{0.48\linewidth}
+  \includegraphics[width=1.\linewidth]{figure/zebra3.jpg}
+  \caption{}
+  \label{fig:zebra4}
+  \end{subfigure}
+\end{center}
+   \caption{The figures demonstrate the relationship between the vanishing point of zebra crossing and the pedestrian light. (a) $y > h/2$, the pedestrian light is beyond the triangular area but closet to the vanishing point. (b) $y < h/2$, the pedestrian light is located in the triangular area and with largest $y$ coordinate. (c) vehicles occlude the zebra crossing slightly, noises are tolerated by RANSAC. (d) vehicles occlude the zebra crossing largely, the vanishing point is misleading.}
+\label{fig:zebra}
+\end{figure}
 \para{Pedestrian light voting.} The vanishing point of the zebra crossing is closely related to the position of the pedestrian light. Assuming that the zebra crossing is successfully detected and a reasonable vanishing point is formed, we find: 
 \begin{itemize}
-\item if there are traffic lights existing in the triangular area formed by the vanishing point and the last zebra line, these lights must include the expected pedestrian light, as shown in Figure~\ref{fig:zebra1}; 
-\item if there is no traffic light in the triangle area, the pedestrian light is generally closer to the vanishing point than other traffic lights, as shown in Figure~\ref{fig:zebra2}.
+\item if there is no traffic light in the triangle area, the pedestrian light is generally closer to the vanishing point than other traffic lights, as shown in Figure~\ref{fig:zebra1}.
+\item if there are traffic lights existing in the triangular area formed by the vanishing point and the last zebra line, these lights must include the expected pedestrian light, and the pedestrian light is closest to the ground, as shown in Figure~\ref{fig:zebra2}; 
 \end{itemize}
 
-Based on the two phenomena we observed, we have made the following algorithm. Firstly we set the upper left corner of the image to the origin of the coordinate system, with the $y$ axis pointing down and the $x$ axis pointing right. We also denote the width and height of the image as $w, h$. Secondly, we check whether there is a stable zebra detection. If no stable zebra is detected, we give no voting with respect to the detected traffic lights. This conservative strategy requires more frames to determine pedestrian lights, but it will minimize the occurrence of errors. For example, when people and cars cross the sidewalk, they tend to occlude the zebra crossings partially. The occlusion is likely to cause the system to erroneously estimate the vanishing point and determinate a fake pedestrian light, as shown in Figure~\ref{fig:zebra3}. Thus, we drop the unstable frames and stay waiting for a reliable result. Thirdly, when a traffic light get 90\% of  $\eta(\eta\ge 30)$ votes and it has larger votes than all other competitors, we believe it is a pedestrian light. If the status of the light is green, the blind start to cross the road.
+Based on the two phenomena we observed, we have made the following algorithm. Firstly we set the upper left corner of the image to the origin of the coordinate system, with the $y$ axis pointing down and the $x$ axis pointing right. We also denote the width and height of the image as $w, h$. Secondly, we check whether there is a stable zebra detection. If no stable zebra is detected, we give no voting with respect to the detected traffic lights. This conservative strategy requires more frames to determine pedestrian lights, but it will minimize the occurrence of errors. For example, when people and cars cross the sidewalk, they tend to occlude the zebra crossings partially. The occlusion is likely to cause the system to erroneously estimate the vanishing point and determinate a fake pedestrian light, as shown in Figure~\ref{fig:zebra3}. Thus, we drop the unstable frames and stay waiting for a reliable result. Thirdly, when a traffic light get 90\% of $\eta(\eta\ge 30)$ votes and it has larger votes than all other competitors, we believe it is a pedestrian light. If the status of the light is green, the blind start to cross the road.
 
 It's possible that the old pedestrian light can disappear from the view, and after a duration it is removed from active traffic light set, as depicted in Algorithm~\ref{alg:traffic_light}. Our system can adapt to the dynamic switching between pedestrian lights. Once the existing pedestrian light is exceeded by other higher traffic lights or no longer valid, a new pedestrian light is elected to replace the old pedestrian light.
 
+
+
+\subsection{Obstacle Avoidance}
+Much of the previous work was limited to studying how to detect traffic lights and zebra crossings. However, to design a robust auxiliary system, obstacle avoidance is a problem that must be solved. Detection algorithms provide us with the obstacle location and categorical information on a two-dimensional plane. We need to estimate which obstacles are threatening to the blind and which are negligible. Thus, we combine a depth estimation algorithm based on either single or binocular cameras and trajectory prediction of obstacles (pedestrians, vehicles) to help the system identify threatened obstacles.
+
+
+\para{RGB-camera depth estimation.}
+Estimating scene depth from single image has become a popular research field~\cite{}. From a common sense perspective, it is impossible to accurately estimate the distance of a three-dimensional world object by one eye, but a relatively rough distance can be obtained from image information. This is the case with depth estimation algorithms based on deep learning.
+
+
+
+
+\para{Stereo-camera depth estimation.}
+
+
+
+\subsection{Finite State Decision System}
+%The deviation during forwarding would be reminded if the user is offset from the original set path and orientation.
+
+\begin{figure}[t]
+\begin{center}
+ \includegraphics[width=1.\linewidth]{figure/fsm_state.jpeg}
+\end{center}
+   \caption{The state transmission during crossing.}
+\label{fig:fsm}
+\end{figure}
+The state of this system is shown in Figure~\ref{fig:fsm}. We assume that the GPS would guide the blind to walk in a correct direction. Thus, deviation is not in consideration of the vision system. 
+\begin{itemize}
+\item \textbf{Light Waiting}. To begin with, a blind stands at a crossroad, with his face heading in the direction to go. The system is initialized at \emph{Light Waiting} stage and starts to search for a pedestrian light in view. When a pedestrian light is selected, the system waits until the pedestrian light turns green. Once the green light shows, the system enters the \emph{Prepare Forwarding} stage.
+\item \textbf{Prepare Forwarding.} The blind keeps waiting in this stage until there is no close obstacle around. If the red light happens to show during waiting, the system returns to the \emph{Light Waiting} stage. Otherwise, when all obstacles are distant, the blind begins to cross the road and the status is marked as \emph{Crossing Road}. 
+\item \textbf{Crossing Road.} In this stage, the user keeps walking, however when the blind encounters close obstacles, the system turns into \emph{Crossing Suspended} stage; when  the green light turns red during crossing, the system will stay in the stage but hasten the blind to pick up speed. 
+\item \textbf{Crossing Suspended.} The user stands by in this status. When all obstacles move away, the system returns to the \emph{Crossing Road} stage and the blind continues to forward. When there is no traffic light in view, it indicates the blind has reached the opposite side of the road. Finally, the status is updated to \emph{Arrival}.
+\item \textbf{Arrival.} When the user reaches the opposite sidewalk, the system can guide him along the planed path until meeting the next crossing. 
+\end{itemize}
 
 
 
