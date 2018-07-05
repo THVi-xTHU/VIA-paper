@@ -115,7 +115,7 @@ Traffic lights are the most important signalling devices positioned at road inte
 
 In our proposed vision-based assistant, zebra crossing detection is implemented as follows. First, the white color is extracted as a mask according to a set threshold. Second, the mask is eroded to get the contours of white strips. Some contours are filtered out by the shape information. Third, we calculate the median average for both left line and right line of zebra crossing. A RANSAC algorithm is performed to select the bounding points of a contour enclosed within the median circle. Finally, the bounding lines and the vanishing point of zebra crossing are derived, which gives the ROI of detection.
 
-\begin{figure}[ht!]
+\begin{figure*}[ht!]
 \begin{center}
 \begin{subfigure}[h]{0.48\linewidth}
  \includegraphics[width=1.\linewidth]{figure/zebra1.jpg}
@@ -133,14 +133,17 @@ In our proposed vision-based assistant, zebra crossing detection is implemented 
   \label{fig:zebra3}
   \end{subfigure}
   \begin{subfigure}[h]{0.48\linewidth}
-  \includegraphics[width=1.\linewidth]{figure/zebra3.jpg}
+  \includegraphics[width=1.\linewidth]{figure/zebra4.jpg}
   \caption{}
   \label{fig:zebra4}
   \end{subfigure}
 \end{center}
-   \caption{The figures demonstrate the relationship between the vanishing point of zebra crossing and the pedestrian light. (a) $y > h/2$, the pedestrian light is beyond the triangular area but closet to the vanishing point. (b) $y < h/2$, the pedestrian light is located in the triangular area and with largest $y$ coordinate. (c) vehicles occlude the zebra crossing slightly, noises are tolerated by RANSAC. (d) vehicles occlude the zebra crossing largely, the vanishing point is misleading.}
+   \caption{The figures demonstrate the relationship between the vanishing point $(x, y)$ of zebra crossing and the pedestrian light. (a) $y > h/2$, the pedestrian light is beyond the triangular area but closet to the vanishing point. (b) $y < h/2$, the pedestrian light is located in the triangular area and with largest $y$ coordinate. (c) vehicles occlude the zebra crossing slightly, noises are tolerated by RANSAC. (d) vehicles occlude the zebra crossing largely, the vanishing point is misleading.}
 \label{fig:zebra}
-\end{figure}
+\end{figure*}
+
+
+
 \para{Pedestrian light voting.} The vanishing point of the zebra crossing is closely related to the position of the pedestrian light. Assuming that the zebra crossing is successfully detected and a reasonable vanishing point is formed, we find: 
 \begin{itemize}
 \item if there is no traffic light in the triangle area, the pedestrian light is generally closer to the vanishing point than other traffic lights, as shown in Figure~\ref{fig:zebra1}.
@@ -179,11 +182,16 @@ Estimating scene depth from single image has become a popular research field~\ci
 \end{figure}
 The state of this system is shown in Figure~\ref{fig:fsm}. We assume that the GPS would guide the blind to walk in a correct direction. Thus, deviation is not in consideration of the vision system. 
 \begin{itemize}
-\item \textbf{Light Waiting}. To begin with, a blind stands at a crossroad, with his face heading in the direction to go. The system is initialized at \emph{Light Waiting} stage and starts to search for a pedestrian light in view. When a pedestrian light is selected, the system waits until the pedestrian light turns green. Once the green light shows, the system enters the \emph{Prepare Forwarding} stage.
-\item \textbf{Prepare Forwarding.} The blind keeps waiting in this stage until there is no close obstacle around. If the red light happens to show during waiting, the system returns to the \emph{Light Waiting} stage. Otherwise, when all obstacles are distant, the blind begins to cross the road and the status is marked as \emph{Crossing Road}. 
-\item \textbf{Crossing Road.} In this stage, the user keeps walking, however when the blind encounters close obstacles, the system turns into \emph{Crossing Suspended} stage; when  the green light turns red during crossing, the system will stay in the stage but hasten the blind to pick up speed. 
-\item \textbf{Crossing Suspended.} The user stands by in this status. When all obstacles move away, the system returns to the \emph{Crossing Road} stage and the blind continues to forward. When there is no traffic light in view, it indicates the blind has reached the opposite side of the road. Finally, the status is updated to \emph{Arrival}.
-\item \textbf{Arrival.} When the user reaches the opposite sidewalk, the system can guide him along the planed path until meeting the next crossing. 
+\item \textbf{Wait for signal.} To begin with, a blind stands at a crossroad, with his face heading in the direction to go. The system is initialized at \emph{Wait for signal} state and starts to search for a pedestrian light in view. When a pedestrian light is detected and determined, the system waits until the pedestrian light turns green. Once the green light is captured, the system state is shifted to the \emph{Start Advancing} state.
+
+\item \textbf{Start Advancing.} The blind keeps waiting in this stage until there is no close obstacle around. If the red light happens to show during waiting, the system state is shifted back to the \emph{Wait for signal} state. Otherwise, when all obstacles are distant, the blind begins to cross the road and the state is changed as \emph{Continue Crossing}. 
+
+\item \textbf{Continue Crossing.} In this state, the user keeps walking. However when the blind encounters close obstacles, the system turns into \emph{Pause} state; when  the green light turns red during crossing, the system will be locked in the state and hasten the blind to pick up speed. 
+
+
+\item \textbf{Pause.} The user stands by in this status. When all obstacles move away, the system returns to the \emph{Continue Crossing} state and the blind continues advancing. When there is no traffic light in view, it indicates the blind has reached the opposite side of the road. Finally, the state is updated as \emph{Arrive}.
+
+\item \textbf{Arrive.} When the user reaches the opposite sidewalk, the system can guide him along the planed path until meeting the next crossing. 
 \end{itemize}
 
 
