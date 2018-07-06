@@ -11,6 +11,35 @@ Inevitably, an image captured by an RGB camera may conclude multiple traffic lig
 \para{Obstacle avoidance.} Even if green lights turns on, it doesn't mean that the blind can cross the road right away. There are always pedestrians from same or opposite sides walking back and forth; and it is possible that some vehicles are also making the left/right turn simultaneously, since that in certain countries, the left or right turn for the motor vehicles are not ruled by the traffic light; More commonly, non-motorized vehicles are also running on the non-motorized lanes on both sides. If not getting notified of how to avoid these obstacles in time, blind people will be in risk to walk through. Our solution is to first use the detection algorithm to obtain the position of obstacles in view, and secondly to obtain the distance between each obstacle and the blind by monocular or binocular depth estimation algorithms. Moreover, if we can predict the motion of the obstacle in future, we will be able to better decide whether to stop or keep forwarding, so we also track the route of the obstructive objects in view.
 
 \subsection{Robust traffic light detection and tracking}
+\begin{figure*}[ht!]
+	\begin{center}
+		\begin{subfigure}[h]{0.315\linewidth}
+			\includegraphics[width=1.\linewidth]{figure/det_track_a.jpg}
+			\caption{}
+			\label{fig:det_track_a}
+		\end{subfigure}
+		\begin{subfigure}[h]{0.315\linewidth}
+			\includegraphics[width=1.\linewidth]{figure/det_track_b.jpg}
+			\caption{}
+			\label{fig:det_track_b}
+		\end{subfigure}
+		\begin{subfigure}[h]{0.35\linewidth}
+			\includegraphics[width=1.\linewidth]{figure/det_track_c.jpg}
+			\caption{}
+			\label{fig:det_track_c}
+		\end{subfigure}
+	\end{center}
+	\caption{An example of robust traffic light detection and tracking. 
+	(a) At time slot \emph{T-1}, two traffic lights (one pedestrian light and one vehicle light) are detected. 
+	(b) At time slot \emph{T}, only the vehicle light is detected and the tracking result of vehicle light is imprecise.
+	(c) At time slot \emph{T}, after merging, merged traking helps detection and detection rectifies tracking results.}
+	\label{fig:det_track}
+\end{figure*}
+
+
+
+
+
 \para{Detection.} Modern object detectors are easily adapted to road scene by training with automated datasets such as  YOLOv3~\cite{redmon-farhadi:2018}
 
 
