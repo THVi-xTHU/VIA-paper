@@ -1,3 +1,12 @@
+\begin{figure*}[ht!]
+	\begin{center}
+		\includegraphics[width=1.\linewidth]{figure/overall.jpg}
+	\end{center}
+	\caption{Overall system design.}
+	\label{fig:overall}
+\end{figure*}
+
+
 \section{Method}
 \subsection{Problem Formulation}
 The main difficulties for the blind people to cross the street include: 1) to find the direction to go; 2) to recognize the  traffic lights; 3) to distinguish and avoid obstacles through the road. In response to these problems, we have given corresponding solutions. The system is dedicated to be deployed in the form of smart glasses.
@@ -9,6 +18,11 @@ The main difficulties for the blind people to cross the street include: 1) to fi
 Inevitably, an image captured by an RGB camera may conclude multiple traffic lights. The problem of distinguishing the correct pedestrian light is not within the consideration of automated driving, but is indeed significant in our application. Unfortunately, the standard for the traffic lights in different countries is not unified. For instance, China uses the human figures to represent pedestrian lights, and the arrow figures to indicate left turn or right turn; While in the USA, both pedestrian lights and car lights are all indicated by red or green circular figures, which makes it difficult to directly differentiate the pedestrian light from shape. Nevertheless, we assume that there are zebra crossings  on city roads, so the traffic lights on the opposite side of the zebra crossing should be pedestrian lights. Thus, by detecting zebra lines on road, we use this intuition in our algorithms to identify pedestrian and non-pedestrian lights.
 
 \para{Obstacle avoidance.} Even if green lights turns on, it doesn't mean that the blind can cross the road right away. There are always pedestrians from same or opposite sides walking back and forth; and it is possible that some vehicles are also making the left/right turn simultaneously, since that in certain countries, the left or right turn for the motor vehicles are not ruled by the traffic light; More commonly, non-motorized vehicles are also running on the non-motorized lanes on both sides. If not getting notified of how to avoid these obstacles in time, blind people will be in risk to walk through. Our solution is to first use the detection algorithm to obtain the position of obstacles in view, and secondly to obtain the distance between each obstacle and the blind by monocular or binocular depth estimation algorithms. Moreover, if we can predict the motion of the obstacle in future, we will be able to better decide whether to stop or keep forwarding, so we also track the route of the obstructive objects in view.
+
+
+\subsection{Overall system design}
+The overall system design of our vision-based road crossing assistant system is shown in Figure \ref{fig:overall}. Single RGB image is captured by a  wearable RGB camera. Then the input image will be processed by zebra crossing detection module, detection\&tracking module and depth estimation module, respectively. The detection results of zebra crossing will be used for pedestrian light voting and a HSV-based light color classifier is adopted after detection\&tracking. A finite state decision system will access the results from all the modules and issue action instructions to the user.
+
 
 \subsection{Robust traffic light detection and tracking}
 \begin{figure*}[ht!]
